@@ -16,6 +16,9 @@ var EventRequest = require('./event_request').EventRequest;
 var VoiceRequest = require('./voice_request').VoiceRequest;
 var UserEntitiesRequest = require('./user_entities_request').UserEntitiesRequest;
 
+var httpsProxyAgent = require('https-proxy-agent');
+var httpProxyAgent = require('http-proxy-agent');
+
 var version = '20150910';
 var language = 'en';
 var hostname = 'api.api.ai';
@@ -78,7 +81,19 @@ function Application (clientAccessToken, options) {
     }
 
     var _http = self.secure ? https : http;
-    self._agent = new _http.Agent({ keepAlive: true });
+
+    if('proxy' in options) {
+        var proxy = options.proxy;
+        if(/^https/.test(proxy.url) === true) {
+            self._agent = new httpsProxyAgent(proxy.url + ':' + proxy.port);
+        } else {
+            self._agent = new httpProxyAgent(proxy.url + ':' + proxy.port);
+        }
+
+        self._agent['keepAlive'] = true;
+    } else {
+        self._agent = new _http.Agent({ keepAlive: true });
+    }
 };
 
 Application.prototype.contextsRequest = function(contexts, options) {
